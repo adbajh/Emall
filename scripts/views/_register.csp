@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户注册</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .register-container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .button-group {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .button-group button, .button-group a {
+            padding: 12px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            color: white;
+            display: block;
+        }
+        #registerBtn {
+            background-color: #28a745;
+        }
+        #registerBtn:hover {
+            background-color: #218838;
+        }
+        .back-link {
+            background-color: #6c757d;
+        }
+        .back-link:hover {
+            background-color: #5a6268;
+        }
+        #message {
+            margin-top: 15px;
+            text-align: center;
+            font-weight: bold;
+            height: 20px;
+        }
+        .error {
+            color: red;
+        }
+        .success {
+            color: green;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="register-container">
+        <h2>创建您的账号</h2>
+        <form id="registerForm">
+            <div class="input-group">
+                <label for="name">名称</label>
+                <input type="text" id="name" name="name" required>
+            </div>
+            <div class="input-group">
+                <label for="account">账号</label>
+                <input type="text" id="account" name="account" required>
+            </div>
+            <div class="input-group">
+                <label for="password">密码</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <div class="input-group">
+                <label for="confirmPassword">确认密码</label>
+                <input type="password" id="confirmPassword" name="confirmPassword" required>
+            </div>
+            <div id="message"></div>
+            <div class="button-group">
+                <button type="button" id="registerBtn">注册</button>
+                <a href="/emall/login" class="back-link">返回登录界面</a>
+                <a href="/emall" class="back-link">返回主界面</a>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // --- 配置 ---
+        const ip = '114.212.20.69';
+        const port = '5555';
+        const registerUrl = `http://${ip}:${port}/emall/register`;
+        
+        // --- 获取页面元素 ---
+        const registerBtn = document.getElementById('registerBtn');
+        const nameInput = document.getElementById('name');
+        const accountInput = document.getElementById('account');
+        const passwordInput = document.getElementById('password');
+        const confirmPasswordInput = document.getElementById('confirmPassword');
+        const message = document.getElementById('message');
+
+        // --- 监听注册按钮的点击事件 ---
+        registerBtn.addEventListener('click', function() {
+            
+            const name = nameInput.value.trim();
+            const account = accountInput.value.trim();
+            const password = passwordInput.value.trim();
+            const confirmPassword = confirmPasswordInput.value.trim();
+            
+            message.textContent = '';
+            message.className = '';
+
+            if (!name || !account || !password) {
+                message.textContent = '名称、账号和密码不能为空！';
+                message.className = 'error';
+                return;
+            }
+            if (password !== confirmPassword) {
+                message.textContent = '两次输入的密码不一致';
+                message.className = 'error';
+                return;
+            }
+            
+            const data = {
+                name: name,
+                account: account,
+                password: password
+            };
+
+            fetch(registerUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    // 根据您的统一规范，即使是注册页也添加这些头（值为空）
+                    'UserAccount': '',
+                    'UserToken': '',
+                    'UserIp': '127.0.0.1' // 占位符
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('网络响应错误');
+                return response.json();
+            })
+            .then(jsonResponse => {
+                // 【关键修改】根据您的API文档，判断 "result" 字段
+                if (jsonResponse.result === true) {
+                    message.textContent = '注册成功！即将跳转到登录页面...';
+                    message.className = 'success';
+                    setTimeout(() => {
+                        window.location.href = '/emall/login';
+                    }, 2000);
+                } else {
+                    message.textContent = '注册失败：账号已经存在';
+                    message.className = 'error';
+                }
+            })
+            .catch(error => {
+                console.error('注册请求失败:', error);
+                message.textContent = '注册服务异常，请稍后重试。';
+                message.className = 'error';
+            });
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户登录</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f4; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .login-container { background-color: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
+        h2 { text-align: center; color: #333; margin-bottom: 20px; }
+        .input-group { margin-bottom: 20px; }
+        .input-group label { display: block; margin-bottom: 5px; color: #555; }
+        .input-group input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        .button-group { display: flex; flex-direction: column; gap: 10px; margin-top: 20px;} /* 修改为垂直排列 */
+        button, a.button-style { padding: 12px; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; text-align: center; text-decoration: none; color: white; display: block; }
+        
+        #loginBtn { background-color: #007bff; }
+        #loginBtn:hover { background-color: #0056b3; }
+        
+        .register-link { background-color: #28a745; }
+        .register-link:hover { background-color: #218838; }
+
+        .home-link { background-color: #6c757d; }
+        .home-link:hover { background-color: #5a6268; }
+
+        #errorMessage { margin-top: 15px; color: red; text-align: center; font-weight: bold; height: 20px; }
+    </style>
+</head>
+<body>
+
+    <div class="login-container">
+        <h2>用户登录</h2>
+        <form id="loginForm">
+            <div class="input-group">
+                <label for="account">账号</label>
+                <input type="text" id="account" name="account" required>
+            </div>
+            <div class="input-group">
+                <label for="password">密码</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <div id="errorMessage"></div>
+            <div class="button-group">
+                <button type="button" id="loginBtn">登录</button>
+                <a href="/emall/register" class="button-style register-link">注册</a>
+                <a href="/emall" class="button-style home-link">返回主界面</a>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // --- 配置 ---
+        const ip = '114.212.20.69';
+        const port = '5555';
+        const loginUrl = `http://${ip}:${port}/emall/login`;
+        
+        // --- 获取页面元素 ---
+        const loginBtn = document.getElementById('loginBtn');
+        const accountInput = document.getElementById('account');
+        const passwordInput = document.getElementById('password');
+        const errorMessage = document.getElementById('errorMessage');
+
+        loginBtn.addEventListener('click', function() {
+            
+            const account = accountInput.value.trim();
+            const password = passwordInput.value.trim();
+            errorMessage.textContent = '';
+
+            if (!account || !password) {
+                errorMessage.textContent = '账号和密码不能为空！';
+                return;
+            }
+            
+            const data = {
+                account: account,
+                password: password
+            };
+
+            fetch(loginUrl, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'UserAccount': '',
+                    'UserToken': '',
+                    'UserIp': '127.0.0.1'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('网络响应错误');
+                return response.json();
+            })
+            .then(jsonResponse => {
+                // 【关键修改】根据您的API文档，判断 "status" 字段
+                switch(jsonResponse.status) {
+                    case 0: // 登录成功
+                        // 【关键修改】使用和项目统一的键名 "account" 和 "token"
+                        sessionStorage.setItem('account', account);
+                        sessionStorage.setItem('token', jsonResponse.token);
+                        window.location.href = '/emall'; // 跳转到主页
+                        break;
+                    case 1:
+                        errorMessage.textContent = '账号不存在';
+                        break;
+                    case 2:
+                        errorMessage.textContent = '密码错误';
+                        break;
+                    case 3:
+                        errorMessage.textContent = '账号已在别的主机上登录';
+                        break;
+                    default:
+                        errorMessage.textContent = '发生未知错误';
+                        break;
+                }
+            })
+            .catch(error => {
+                console.error('登录请求失败:', error);
+                errorMessage.textContent = '登录服务异常，请稍后重试。';
+            });
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>未授权访问 - Emall</title>
+    
+    <!-- 
+      === 方式一：HTML Meta Refresh (最简单、最可靠的自动跳转) ===
+      设置 3 秒后自动跳转到 /emall/login
+    -->
+    <meta http-equiv="refresh" content="3;url=/emall/login">
+    
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 0; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            background-color: #f4f4f4; 
+            text-align: center;
+        }
+        .container {
+            background-color: #fff;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #dc3545; /* 红色警告 */
+            font-size: 28px;
+            margin-bottom: 15px;
+        }
+        p {
+            color: #6c757d;
+            font-size: 18px;
+            margin-bottom: 30px;
+        }
+        .countdown {
+            font-weight: bold;
+            color: #007bff;
+        }
+        a {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🙅 访问受限</h1>
+        <p>您尚未登录或登录信息已过期，请重新登录以访问该页面。</p>
+        <p>页面将在 <span id="countdown" class="countdown">3</span> 秒后自动跳转至 <a href="/emall/login">登录页面</a>。</p>
+        <p>如果长时间未跳转，请点击上方链接。</p>
+    </div>
+
+    <script>
+        // === 方式二：JavaScript 跳转和倒计时 (提供更好的用户体验) ===
+        const COUNTDOWN_SECONDS = 3;
+        let remaining = COUNTDOWN_SECONDS;
+        const countdownElement = document.getElementById('countdown');
+
+        function updateCountdown() {
+            if (countdownElement) {
+                countdownElement.textContent = remaining;
+            }
+
+            if (remaining <= 0) {
+                // 如果 Meta Refresh 失败，确保 JavaScript 跳转也能工作
+                if (window.location.pathname !== '/emall/login') {
+                    window.location.href = '/emall/login';
+                }
+            } else {
+                remaining--;
+                setTimeout(updateCountdown, 1000);
+            }
+        }
+
+        // 立即开始倒计时
+        document.addEventListener('DOMContentLoaded', updateCountdown);
+        
+        // 确保立即执行跳转，以防 Meta Refresh 在某些情况下被禁用
+        // 仅在页面加载时执行一次，通常 Meta Refresh 会先执行
+        // 如果想更快的跳转，可以把上面的倒计时时间设置为 0 或 1
+    </script>
+</body>
+</html>
