@@ -1,0 +1,27 @@
+build/
+cmake-build-debug/
+.cache/
+
+# 忽略 IDE 配置文件 (VSCode, CLion 等)
+.vscode/
+.idea/
+*.swp
+*.DS_Store
+
+# 忽略二进制可执行文件 (假设你的程序叫 emall)
+emall
+
+# 忽略数据库文件 (通常不上传二进制数据库，只上传建表 SQL 脚本)
+*.db
+*.sqlite
+data/database/*.db
+
+# 忽略用户上传的图片/文件，但保留目录结构
+# 忽略目录下所有内容
+data/images/item/*
+data/images/shop/*
+data/images/user/*
+# 但保留 .gitkeep (如果有) 或保留文件夹本身
+!data/images/item/.gitkeep
+!data/images/shop/.gitkeep
+!data/images/user/.gitkeep
