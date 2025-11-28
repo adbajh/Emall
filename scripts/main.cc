@@ -5,7 +5,7 @@
 using namespace drogon;
 
 int main() {
-    initialize_db();
+    // initialize_db();
     // initialize_file();
     // initialize_database(database_name);
     // initialize_case(database_name);
