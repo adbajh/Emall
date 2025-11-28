@@ -12,9 +12,6 @@ cmake-build-debug/
 emall
 
 # 忽略数据库文件 (通常不上传二进制数据库，只上传建表 SQL 脚本)
-*.db
-*.sqlite
-data/database/*.db
 
 # 忽略用户上传的图片/文件，但保留目录结构
 # 忽略目录下所有内容

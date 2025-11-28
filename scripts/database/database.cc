@@ -118,63 +118,97 @@ void initialize_table() {
 }
 
 void initialize_case() {
-    // 1. 调用 initialize() 来确保一个干净的数据库环境
-    // initialize();
-
-    // 2. 打开数据库连接
     sqlite3* db;
-    int rc = sqlite3_open(database_name, &db);
-    if (rc != SQLITE_OK) {
+    if (sqlite3_open(database_name, &db) != SQLITE_OK) {
         std::cerr << "Cannot open database for test cases: " << sqlite3_errmsg(db) << std::endl;
-        sqlite3_close(db);
         return;
     }
 
-    // 3. 插入测试数据
     char* err_msg = nullptr;
     const char* sql_insert_data =
-        // 添加3个用户
-        "INSERT INTO users (name, account, password, description) VALUES ('Alice', 'alice123', 'pass1', 'I am a manager.');"
-        "INSERT INTO users (name, account, password, description) VALUES ('Bob', 'bob456', 'pass2', 'I am a seller.');"
-        "INSERT INTO users (name, account, password, description) VALUES ('Charlie', 'charlie789', 'pass3', 'I am a buyer.');"
+        "BEGIN TRANSACTION;"
 
-        // Alice (id=1) 创建一个商店
-        "INSERT INTO shops (name, invite_code, manager_id, creation_date, status, description) VALUES ('Alice Tech', 'ALICE01', 1, date('now', '-10 days'), 1, 'An awesome electronic store.');"
-        "INSERT INTO shops (name, invite_code, manager_id, creation_date, status, description) VALUES ('Bookworm Haven', 'BOOKS02', 1, date('now', '-5 days'), 1, 'Your friendly neighborhood bookstore.');"
+        // --- (1) 添加6个用户 ---
+        // ID=1, Alice: 经理, 有两家店
+        "INSERT INTO users (name, account, password, description) VALUES ('Alice', 'alice123', 'pass1', '我管理着两家很棒的店铺！');"
+        // ID=2, Bob: 销售员, 加入了Alice的两家店
+        "INSERT INTO users (name, account, password, description) VALUES ('Bob', 'bob456', 'pass2', '我是一名金牌销售。');"
+        // ID=3, Charlie: 纯买家
+        "INSERT INTO users (name, account, password, description) VALUES ('Charlie', 'charlie789', 'pass3', '我喜欢购物。');"
+        // ID=4, Diana: 经理, 有一家自己的店
+        "INSERT INTO users (name, account, password, description) VALUES ('Diana', 'diana001', 'pass4', '家居生活，找我就对啦。');"
+        // ID=5, Eve: 销售员, 加入了Diana的店
+        "INSERT INTO users (name, account, password, description) VALUES ('Eve', 'eve002', 'pass5', '欢迎光临我的小店~');"
+        // ID=6, Frank: 纯买家
+        "INSERT INTO users (name, account, password, description) VALUES ('Frank', 'frank003', 'pass6', '正在寻找一些好东西。');"
 
-        // Bob (id=2) 加入 Alice 的第一个商店
-        "INSERT INTO seller_shops (seller_id, shop_id) VALUES (2, 1);"
+        // --- (2) 创建3家店铺 ---
+        // ID=1, Alice(1)的科技店
+        "INSERT INTO shops (name, invite_code, manager_id, creation_date, status, description) VALUES ('Alice科技', 'TECH01', 1, date('now', '-20 days'), 1, '最新最酷的电子产品。');"
+        // ID=2, Alice(1)的书店
+        "INSERT INTO shops (name, invite_code, manager_id, creation_date, status, description) VALUES ('书虫天堂', 'BOOK02', 1, date('now', '-15 days'), 1, '知识的海洋，精神的家园。');"
+        // ID=3, Diana(4)的家居店
+        "INSERT INTO shops (name, invite_code, manager_id, creation_date, status, description) VALUES ('戴安娜家居', 'HOME03', 4, date('now', '-10 days'), 1, '为您的家增添一份温馨。');"
 
-        // 添加几个类别
-        "INSERT INTO categories (name) VALUES ('Electronics');"
-        "INSERT INTO categories (name) VALUES ('Books');"
-        "INSERT INTO categories (name) VALUES ('Computer');"
-        "INSERT INTO categories (name) VALUES ('Fiction');"
+        // --- (3) 建立销售员与店铺的关系 ---
+        "INSERT INTO seller_shops (seller_id, shop_id) VALUES (2, 1);" // Bob(2) 加入 Alice科技(1)
+        "INSERT INTO seller_shops (seller_id, shop_id) VALUES (2, 2);" // Bob(2) 也加入了 书虫天堂(2)
+        "INSERT INTO seller_shops (seller_id, shop_id) VALUES (5, 3);" // Eve(5) 加入 戴安娜家居(3)
 
-        // Alice (id=1) 在她的第一个商店 (id=1) 发布商品
-        "INSERT INTO items (name, seller_id, shop_id, price, publish_date, publish_time, description) VALUES ('Laptop', 1, 1, 1299.99, date('now', '-2 days'), time('now'), 'A powerful gaming laptop');"
-        "INSERT INTO items (name, seller_id, shop_id, price, publish_date, publish_time, description) VALUES ('Sci-Fi Novel', 1, 2, 19.99, date('now', '-1 day'), time('now'), 'A journey to the stars.');"
+        // --- (4) 发布多种商品 ---
+        // 经理Alice(1)在她自己的店里发布商品
+        "INSERT INTO items (name, seller_id, shop_id, price, description, publish_date) VALUES ('游戏本', 1, 1, 8999.00, '高性能电竞笔记本', date('now', '-5 days'));" // item_id=1
+        "INSERT INTO items (name, seller_id, shop_id, price, description, publish_date) VALUES ('智能手表', 1, 1, 1299.00, '健康监测，运动伴侣', date('now', '-4 days'));" // item_id=2
+        "INSERT INTO items (name, seller_id, shop_id, price, description, publish_date) VALUES ('历史巨著', 1, 2, 88.50, '一部深刻的世界史', date('now', '-3 days'));"   // item_id=3
+        // 销售员Bob(2)在他加入的店里发布商品
+        "INSERT INTO items (name, seller_id, shop_id, price, description, publish_date) VALUES ('机械键盘', 2, 1, 499.00, '手感超群，RGB光效', date('now', '-2 days'));" // item_id=4
+        "INSERT INTO items (name, seller_id, shop_id, price, description, publish_date) VALUES ('科幻漫画', 2, 2, 25.00, '畅销系列最终卷', date('now', '-1 day'));"    // item_id=5
+        // 经理Diana(4)在她自己的店里发布商品
+        "INSERT INTO items (name, seller_id, shop_id, price, description, publish_date) VALUES ('布艺沙发', 4, 3, 2599.00, '三人位，舒适柔软', date('now', '-2 days'));" // item_id=6
+        // 销售员Eve(5)在她加入的店里发布商品
+        "INSERT INTO items (name, seller_id, shop_id, price, description, publish_date) VALUES ('装饰台灯', 5, 3, 189.00, '简约设计，温馨光线', date('now', '-1 day'));"   // item_id=7
 
-        // Bob (id=2) 在 Alice 的第一个商店 (id=1) 发布商品
-        "INSERT INTO items (name, seller_id, shop_id, price, publish_date, publish_time, description) VALUES ('Mouse', 2, 1, 25.50, date('now'), time('now'), 'A comfortable wireless mouse');"
+        // --- (5) 关联商品和类别 (注意：这里的category_id需要与initialize_category中的插入顺序对应) ---
+        "INSERT INTO item_categories (item_id, category_id) VALUES (1, 2);"  // 游戏本 -> 电脑整机
+        "INSERT INTO item_categories (item_id, category_id) VALUES (1, 9);"  // 游戏本 -> 游戏设备
+        "INSERT INTO item_categories (item_id, category_id) VALUES (2, 8);"  // 智能手表 -> 智能穿戴
+        "INSERT INTO item_categories (item_id, category_id) VALUES (3, 24);" // 历史巨著 -> 图书
+        "INSERT INTO item_categories (item_id, category_id) VALUES (4, 3);"  // 机械键盘 -> 电脑配件
+        "INSERT INTO item_categories (item_id, category_id) VALUES (5, 24);" // 科幻漫画 -> 图书
+        "INSERT INTO item_categories (item_id, category_id) VALUES (5, 29);" // 科幻漫画 -> 动漫周边
+        "INSERT INTO item_categories (item_id, category_id) VALUES (6, 20);" // 布艺沙发 -> 家具
+        "INSERT INTO item_categories (item_id, category_id) VALUES (7, 23);" // 装饰台灯 -> 灯具
 
-        // 关联商品和类别
-        "INSERT INTO item_categories (item_id, category_id) VALUES (1, 1);" // Laptop -> Electronics
-        "INSERT INTO item_categories (item_id, category_id) VALUES (1, 3);" // Laptop -> Computer
-        "INSERT INTO item_categories (item_id, category_id) VALUES (2, 2);" // Sci-Fi Novel -> Books
-        "INSERT INTO item_categories (item_id, category_id) VALUES (2, 4);" // Sci-Fi Novel -> Fiction
-        "INSERT INTO item_categories (item_id, category_id) VALUES (3, 1);" // Mouse -> Electronics
+        // --- (6) 创建多个不同状态的订单 ---
+        // 订单1: 已完成。Charlie(3) 购买了 Bob(2) 的 机械键盘(4)
+        "INSERT INTO orders (item_id, buyer_id, seller_id, shop_id, quantity, total_price, address, order_date, order_status) VALUES (4, 3, 2, 1, 1, 499.00, '南京市仙林大道163号', date('now', '-1 day'), 3);"
+        // 订单2: 已支付，待发货。Frank(6) 购买了 Alice(1) 的 智能手表(2)
+        "INSERT INTO orders (item_id, buyer_id, seller_id, shop_id, quantity, total_price, address, order_date, order_status) VALUES (2, 6, 1, 1, 1, 1299.00, '上海市浦东新区', date('now'), 1);"
+        // 订单3: 已发货，待收货。Charlie(3) 购买了 Diana(4) 的 布艺沙发(6)
+        "INSERT INTO orders (item_id, buyer_id, seller_id, shop_id, quantity, total_price, address, order_date, order_status) VALUES (6, 3, 4, 3, 1, 2599.00, '南京市仙林大道163号', date('now'), 2);"
+        // 订单4: 未支付。Frank(6) 购买了 Eve(5) 的 2个台灯(7)
+        "INSERT INTO orders (item_id, buyer_id, seller_id, shop_id, quantity, total_price, address, order_date, order_status) VALUES (7, 6, 5, 3, 2, 378.00, '上海市浦东新区', date('now'), 0);"
 
-        // Charlie (id=3) 下一个订单，购买 Bob (id=2) 卖的鼠标 (item_id=3)
-        "INSERT INTO orders (item_id, buyer_id, seller_id, shop_id, quantity, total_price, address, order_date, order_time, order_status) VALUES (3, 3, 2, 1, 2, 51.00, '123 Main St, Anytown', date('now'), time('now'), 0);";
+        // --- (7) 创建一些消息，包含未读消息 ---
+        // Charlie(3) 问 Diana(4) 关于沙发的问题
+        "INSERT INTO messages (sender_id, receiver_id, content, send_date, send_time, is_read) VALUES (3, 4, '你好，请问这个沙发是什么材质的？', date('now'), '10:30:00', 1);"
+        // Diana(4) 回复了 Charlie(3)
+        "INSERT INTO messages (sender_id, receiver_id, content, send_date, send_time, is_read) VALUES (4, 3, '亲，是高弹海绵和棉麻布料的哦', date('now'), '10:32:00', 0);" // Charlie未读
+        // 经理间的对话
+        "INSERT INTO messages (sender_id, receiver_id, content, send_date, send_time, is_read) VALUES (1, 4, 'Diana, 你的家居店看起来真不错！', date('now', '-1 day'), '09:00:00', 1);"
+        "INSERT INTO messages (sender_id, receiver_id, content, send_date, send_time, is_read) VALUES (4, 1, '谢谢你Alice，有空来坐坐呀！', date('now', '-1 day'), '09:05:00', 1);"
+        // Frank(6) 给 Bob(2) 发消息，Bob未读
+        "INSERT INTO messages (sender_id, receiver_id, content, send_date, send_time, is_read) VALUES (6, 2, '老板，键盘还有其他颜色吗？', date('now'), '11:00:00', 0);"
 
-    rc = sqlite3_exec(db, sql_insert_data, 0, 0, &err_msg);
-    if (rc != SQLITE_OK) {
+        "COMMIT;";
+
+    if (sqlite3_exec(db, sql_insert_data, 0, 0, &err_msg) != SQLITE_OK) {
         std::cerr << "SQL error in initialize_case: " << err_msg << std::endl;
         sqlite3_free(err_msg);
+    } else {
+        std::cout << "Database has been successfully initialized with extensive test cases." << std::endl;
     }
 
-    // 4. 关闭数据库连接
     sqlite3_close(db);
 }
 
@@ -272,5 +306,5 @@ void initialize_category() {
 void initialize_db() {
     initialize_table();
     initialize_category();
-    // initialize_case();
+    initialize_case();
 }

@@ -6,7 +6,9 @@
 
 using namespace drogon;
 
-#define ENABLE_MESSAGE_LOGS
+#define ENABLE_LOGIN_REGISTER_LOGS
+// #define WITHOUT_LOGIN_LOGS
+// #define ENABLE_MESSAGE_LOGS
 
 int idx_to_id(int idx, const string& type);
 int id_to_idx(int id, const string& type);
@@ -124,6 +126,26 @@ class Controller : public drogon::HttpController<Controller>
     void receive_history(const HttpRequestPtr &req, std::function<void (const HttpResponsePtr &)> &&callback) const;
     void mark_read(const HttpRequestPtr &req, std::function<void (const HttpResponsePtr &)> &&callback) const;
 };
+
+#ifdef ENABLE_LOGIN_REGISTER_LOGS
+
+#define ENABLE_LOGIN_POST
+#define ENABLE_REGISTER_POST
+
+#endif
+
+#ifdef WITHOUT_LOGIN_LOGS
+
+#define ENABLE_GET_USER_IDX
+#define ENABLE_SEARCH_NEXT_ITEM
+#define ENABLE_REQUIRE_SAFE_TYPE
+#define ENABLE_REQUIRE_SAFE_USER
+#define ENABLE_REQUIRE_SAFE_ITEM
+#define ENABLE_REQUIRE_SAFE_SHOP
+#define ENABLE_REQUIRE_IMAGE
+
+#endif
+
 
 #ifdef ENABLE_MESSAGE_LOGS
 
