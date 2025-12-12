@@ -129,38 +129,33 @@ void delete_image(const string &type, int idx) {
 }
 
 void initialize_file() {
-    // 需要清空的三个子目录
-    std::vector<std::string> subdirs = {"item", "shop", "user"};
-
-    for (const auto& subdir : subdirs) {
-        // 拼接完整路径
-        std::string dir_str = IMAGE_FULL_PATH + "/" + subdir;
-        std::filesystem::path dir_path(dir_str);
-
-        try {
-            // 1. 如果目录不存在，则创建它 (作为初始化的一部分)
-            if (!std::filesystem::exists(dir_path)) {
-                std::filesystem::create_directories(dir_path);
-                std::cout << "[init]: 创建目录: " << dir_str << std::endl;
-                continue;
-            }
-
-            // 2. 如果目录存在，遍历并删除其中所有内容
-            int deleted_count = 0;
-            for (const auto& entry : std::filesystem::directory_iterator(dir_path)) {
-                // remove_all 可以删除文件，也可以删除子文件夹
-                std::filesystem::remove_all(entry.path());
-                deleted_count++;
-            }
-
-            if (deleted_count > 0) {
-                std::cout << "[init]: 已清空 " << dir_str << " (删除了 " << deleted_count << " 个文件)" << std::endl;
-            } else {
-                std::cout << "[init]: 目录已为空: " << dir_str << std::endl;
-            }
-
-        } catch (const std::exception& e) {
-            std::cout << "[error]: 初始化目录失败 " << dir_str << ": " << e.what() << std::endl;
+    const std::string data_path = "data";
+    
+    try {
+        // 1. 如果 data 目录存在，则删除它
+        if (std::filesystem::exists(data_path)) {
+            std::cout << "[init]: 删除现有 data 目录..." << std::endl;
+            std::filesystem::remove_all(data_path);
+            std::cout << "[init]: data 目录已删除" << std::endl;
         }
+
+        // 2. 创建所需的目录结构
+        std::vector<std::string> dirs_to_create = {
+            "data/database",
+            "data/images/item",
+            "data/images/shop",
+            "data/images/user"
+        };
+
+        for (const auto& dir_str : dirs_to_create) {
+            std::filesystem::path dir_path(dir_str);
+            std::filesystem::create_directories(dir_path);
+            std::cout << "[init]: 创建目录: " << dir_str << std::endl;
+        }
+
+        std::cout << "[init]: 目录结构初始化完成" << std::endl;
+
+    } catch (const std::exception& e) {
+        std::cout << "[error]: 初始化目录结构失败: " << e.what() << std::endl;
     }
 }

@@ -39,7 +39,7 @@ emall/
 │   ├── test/                  # 单元测试
 │   ├── build/                 # 编译输出目录 (编译后生成)
 │   └── plugins/               # Drogon 插件配置
-├── data/
+├── data/                      # 数据存储，运行时创建
 │   ├── database/
 │   │   └── database.db        # SQLite3 数据库文件
 │   └── images/                # 用户上传的图片

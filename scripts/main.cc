@@ -5,10 +5,10 @@
 using namespace drogon;
 
 int main() {
-    // initialize_db();
-    // initialize_file();
-    // initialize_database(database_name);
-    // initialize_case(database_name);
+    // 初始化数据文件夹
+    initialize_file();
+    // 初始化数据库
+    initialize_db();
     //Set HTTP listener address and port
     drogon::app().addListener("0.0.0.0", 5555);
     drogon::app().setClientMaxBodySize(4 * 1024 * 1024); // max size: 4MB
