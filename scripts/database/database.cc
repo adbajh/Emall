@@ -1,6 +1,6 @@
 #include "database.h"
 
-const char* database_name = "/home/amax/emall/data/database/database.db";
+const char* database_name = "data/database/database.db";
 
 void initialize_table() {
     // 1. 如果 database_name 存在，则删除该文件

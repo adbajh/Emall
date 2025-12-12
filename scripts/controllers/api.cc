@@ -1,6 +1,6 @@
 #include "Controller.h"
 
-const string IMAGE_FULL_PATH = "/home/amax/emall/data/images";
+const string IMAGE_FULL_PATH = "data/images";
 
 int idx_to_id(int idx, const string& type) {
     // TODO
