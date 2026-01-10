@@ -734,8 +734,8 @@ void Controller::send_message(const HttpRequestPtr &req, std::function<void (con
     
     // 获取当前时间
     auto now = trantor::Date::now();
-    std::string date = now.toCustomFormattedString("%Y-%m-%d");
-    std::string time = now.toCustomFormattedString("%H:%M:%S");
+    std::string date = now.toCustomedFormattedString("%Y-%m-%d");
+    std::string time = now.toCustomedFormattedString("%H:%M:%S");
 
     #ifdef ENABLE_SEND_MESSAGE
     cout << endl;
@@ -800,8 +800,8 @@ void Controller::receive_history(const HttpRequestPtr &req, std::function<void (
     } else {
         // 如果没传，就给一个极大值（例如当前时间，或者 "9999-12-31"），表示获取最新的历史
         auto now = trantor::Date::now();
-        before_date = now.toCustomFormattedString("%Y-%m-%d");
-        before_time = now.toCustomFormattedString("%H:%M:%S");
+        before_date = now.toCustomedFormattedString("%Y-%m-%d");
+        before_time = now.toCustomedFormattedString("%H:%M:%S");
     }
 
     std::vector<Message> msgs;
