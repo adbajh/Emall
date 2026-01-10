@@ -4,9 +4,9 @@ name: Emall C++ Project CI
 # 触发条件：推送到 main/master 分支或发起 Pull Request
 on:
   push:
-    branches: [ main, master, dev ]
+    branches: [ version-0 ]
   pull_request:
-    branches: [ main, master, dev ]
+    branches: [ version-0 ]
 
 # 并发控制：同一分支的新提交会取消旧的运行
 concurrency:
