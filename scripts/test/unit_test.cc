@@ -196,3 +196,17 @@ DROGON_TEST(CategorySystemTest)
     std::cout << "[Info] Category query time: " << elapsed * 1000 << " ms"
     << std::endl;
 }
+
+int main(int argc, char **argv) {
+    // 初始化随机数种子
+    std::srand(std::time(nullptr));
+    
+    // 设置数据库为内存数据库（避免文件冲突）
+    database_name = ":memory:";
+    
+    // 初始化数据库
+    initialize_db();
+    
+    // 运行 Drogon 测试框架
+    return drogon::test::run(argc, argv);
+}
