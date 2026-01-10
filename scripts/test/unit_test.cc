@@ -202,7 +202,7 @@ int main(int argc, char **argv) {
     std::srand(std::time(nullptr));
     
     // 设置数据库为内存数据库（避免文件冲突）
-    database_name = ":memory:";
+    database_name = "./unit_test_db";
     
     // 初始化数据库
     initialize_db();
