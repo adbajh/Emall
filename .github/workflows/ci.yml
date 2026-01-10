@@ -1,0 +1,226 @@
+# 工作流名称
+name: Emall C++ Project CI
+
+# 触发条件：推送到 main/master 分支或发起 Pull Request
+on:
+  push:
+    branches: [ main, master, dev ]
+  pull_request:
+    branches: [ main, master, dev ]
+
+# 并发控制：同一分支的新提交会取消旧的运行
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ========== 任务 1: 编译和单元测试 ==========
+  build-and-test:
+    name: Build & Unit Test
+    runs-on: ubuntu-22.04
+    
+    steps:
+    # 1. 检出代码
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive  # 如果有子模块
+
+    # 2. 安装系统依赖
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          cmake \
+          g++-11 \
+          libsqlite3-dev \
+          pkg-config \
+          libssl-dev \
+          uuid-dev \
+          git \
+          libjsoncpp-dev \
+          zlib1g-dev
+
+    # 3. 安装 Drogon 框架
+    - name: Cache Drogon installation
+      id: cache-drogon
+      uses: actions/cache@v3
+      with:
+        path: /usr/local
+        key: drogon-v1.9.1-${{ runner.os }}
+
+    - name: Install Drogon framework
+      if: steps.cache-drogon.outputs.cache-hit != 'true'
+      run: |
+        git clone https://github.com/drogonframework/drogon.git
+        cd drogon
+        git checkout v1.9.1
+        git submodule update --init --recursive
+        mkdir build && cd build
+        cmake -DCMAKE_BUILD_TYPE=Release ..
+        make -j$(nproc)
+        sudo make install
+        sudo ldconfig
+
+    # 4. 编译项目
+    - name: Build Emall project
+      working-directory: scripts
+      run: |
+        mkdir -p build
+        cd build
+        cmake -DCMAKE_BUILD_TYPE=Debug ..
+        make -j$(nproc)
+
+    # 5. 创建测试数据库
+    - name: Initialize test database
+      working-directory: scripts/build
+      run: |
+        mkdir -p ../../data/database
+        # 如果有初始化脚本，可以在这里运行
+        # 例如: sqlite3 ../../data/database/test.db < ../../schema.sql
+
+    # 6. 运行单元测试
+    - name: Run unit tests
+      working-directory: scripts/build
+      run: |
+        # 运行 CTest（如果使用 CTest）
+        ctest --output-on-failure --verbose
+        
+        # 或者直接运行测试可执行文件
+        # ./test_main
+
+    # 7. 生成测试报告
+    - name: Generate test report
+      if: always()
+      working-directory: scripts/build
+      run: |
+        # 如果使用了 CTest，可以生成 XML 报告
+        # ctest -T Test --no-compress-output || true
+        # 将报告上传到 GitHub Artifacts
+        echo "Test completed"
+
+    # 8. 上传测试报告（可选）
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-results
+        path: |
+          scripts/build/Testing/
+          scripts/build/*.log
+
+  # ========== 任务 2: 代码质量检查 ==========
+  code-quality:
+    name: Code Quality Check
+    runs-on: ubuntu-22.04
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    # 使用 clang-tidy 进行静态分析
+    - name: Install clang-tidy
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y clang-tidy-14
+
+    - name: Run clang-tidy
+      working-directory: scripts
+      run: |
+        # 创建 build 目录以生成 compile_commands.json
+        mkdir -p build && cd build
+        cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=ON ..
+        
+        # 运行 clang-tidy（如果有错误仍然继续）
+        find ../database ../controllers -name '*.cc' -or -name '*.cpp' | \
+          xargs clang-tidy-14 -p . || true
+
+  # ========== 任务 3: 模糊测试（可选，耗时较长）==========
+  fuzz-test:
+    name: Fuzz Testing (5 min)
+    runs-on: ubuntu-22.04
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install AFL++
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential git libtool automake bison
+        
+        # 使用缓存的 AFL++ 或重新编译
+        if [ ! -d "AFLplusplus" ]; then
+          git clone https://github.com/AFLplusplus/AFLplusplus
+          cd AFLplusplus
+          make all -j$(nproc)
+          sudo make install
+        fi
+
+    - name: Build fuzz target
+      working-directory: scripts/test
+      run: |
+        mkdir -p build && cd build
+        cmake ..
+        make -j$(nproc)
+
+    - name: Run fuzzing (5 minutes)
+      working-directory: scripts/test
+      run: |
+        mkdir -p seeds afl_output
+        echo -ne '\x00admin\x00test\x00pass123' > seeds/seed1
+        
+        # 设置环境变量
+        export AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1
+        export AFL_SKIP_CPUFREQ=1
+        
+        # 运行 5 分钟
+        timeout 300 afl-fuzz -i seeds -o afl_output -m none \
+          -- ./build/emall_fuzz @@ || true
+
+    - name: Check for crashes
+      working-directory: scripts/test
+      run: |
+        if [ -d "afl_output/default/crashes" ]; then
+          crash_count=$(ls -1 afl_output/default/crashes/id:* 2>/dev/null | wc -l)
+          echo "Found $crash_count crashes"
+          if [ $crash_count -gt 0 ]; then
+            echo "::warning::Fuzzing found $crash_count crashes"
+            ls -lh afl_output/default/crashes/
+          fi
+        fi
+
+    - name: Upload fuzzing results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: fuzz-results
+        path: scripts/test/afl_output/
+
+  # ========== 任务 4: 构建文档（可选）==========
+  build-docs:
+    name: Build Documentation
+    runs-on: ubuntu-22.04
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install Doxygen
+      run: sudo apt-get install -y doxygen graphviz
+
+    - name: Generate documentation
+      run: |
+        # 如果有 Doxyfile 配置文件
+        if [ -f "Doxyfile" ]; then
+          doxygen Doxyfile
+        fi
+
+    - name: Upload documentation
+      uses: actions/upload-artifact@v3
+      with:
+        name: documentation
+        path: docs/html/

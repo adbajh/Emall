@@ -22,3 +22,15 @@ data/images/user/*
 !data/images/item/.gitkeep
 !data/images/shop/.gitkeep
 !data/images/user/.gitkeep
+
+# CI 临时文件
+scripts/build/
+scripts/test/build/
+scripts/test/afl_output/
+scripts/test/seeds/
+data/database/*.db
+Testing/
+*.log
+
+# GitHub Actions 缓存
+.github/cache/
