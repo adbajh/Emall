@@ -1,7 +1,20 @@
 #ifndef DATABASE_API_H
 #define DATABASE_API_H
 
-#include <bits/stdc++.h>
+#include <string>
+#include <vector>
+#include <map>
+#include <set>
+#include <algorithm>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <cstring>
+#include <cstdlib>
+#include <cstdio>
+#include <ctime>
+#include <random>
+
 #include <sqlite3.h>
 
 using namespace std;

@@ -4,7 +4,10 @@ const char* database_name = "data/database/database.db";
 
 void initialize_table() {
     // 1. 如果 database_name 存在，则删除该文件
-    remove(database_name);
+    // 对于内存数据库，不要调用 remove()
+    if (strcmp(database_name, ":memory:") != 0) {
+        remove(database_name);
+    }
 
     // 2. 新建一个 .db 文件并打开连接
     sqlite3* db;
